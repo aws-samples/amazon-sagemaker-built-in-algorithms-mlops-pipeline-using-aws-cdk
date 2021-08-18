@@ -1,0 +1,40 @@
+{
+    "Project": {
+        "Name": "MLOpsPipeline",
+        "Stage": "Demo",
+        "Account": "75157*******",
+        "Region": "us-east-2",
+        "Profile": "cdk-demo"
+    },
+
+    "Stack": {
+        "ChurnXgboostPipeline": {
+            "Name": "ChurnXgboostPipelineStack",
+
+            "EndpointName": "churn-xgboost",
+
+            "GlueJobFilePath": "codes/glue/churn-xgboost/src/glue_etl.py",
+            "GlueJobTimeoutInMin": 30,
+
+            "TrainContainerImage": "825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1",
+            "TrainParameters": {
+                "max_depth": "5",
+                "eta": "0.2",
+                "gamma": "4",
+                "min_child_weight": "6",
+                "subsample": "0.7",
+                "objective": "multi:softprob",
+                "num_class": "2",   
+                "num_round": "50"
+            },
+            "TrainInputContent": "text/csv",
+            "TrainInstanceType": "c5.xlarge",
+
+            "ModelValidationEnable": true,
+            "ModelErrorThreshold": 0.1,
+
+            "EndpointInstanceType": "t2.2xlarge",
+            "EndpointInstanceCount": 1
+        }
+    }
+}
