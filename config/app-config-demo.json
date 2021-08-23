@@ -16,16 +16,17 @@
             "GlueJobFilePath": "codes/glue/churn-xgboost/src/glue_etl.py",
             "GlueJobTimeoutInMin": 30,
 
-            "TrainContainerImage": "825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:1",
+            "TrainContainerImage": "825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:latest",
             "TrainParameters": {
                 "max_depth": "5",
+                "eval_metric": "error",
                 "eta": "0.2",
                 "gamma": "4",
                 "min_child_weight": "6",
-                "subsample": "0.7",
-                "objective": "multi:softprob",
-                "num_class": "2",   
-                "num_round": "50"
+                "subsample": "0.8",
+                "objective": "binary:logistic",
+                "silent": "0",
+                "num_round": "100"
             },
             "TrainInputContent": "text/csv",
             "TrainInstanceType": "c5.xlarge",

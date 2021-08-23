@@ -163,7 +163,7 @@ Download sample data by running the following command:
 sh codes/glue/churn-xgboost/script/download_data.sh
 ```
 
-A sample data will be downloaded in `codes/glue/churn-xgboost/data/input.csv`.
+A sample data will be downloaded in `codes/glue/churn-xgboost/data/input.csv`, and double quotes in this file will be removded to format `csv`.
 
 ### **Trigger the StateMachine in Step Functions**
 
@@ -230,6 +230,51 @@ AWS Glue ETL Job Result in AWS S3 Bucket
 
 Amazon SageMaker Training Job Result in AWS S3 Bucket
 ![sagemaker-training-output](docs/asset/sagemaker-training-output.png)
+
+### **Hot to invoke**
+
+Finally, let's inovoke `SageMaker Endpoint` to make sure it works well. 
+
+Before invocation, open `codes/glue/churn-xgboost/script/test_invoke.py` file, and update `profile name` and `endpoint name` according to your configuration.
+
+```python
+...
+...
+
+os.environ['AWS_PROFILE'] = 'cdk-demo'
+_endpoint_name = 'MLOpsPipelineDemo-churn-xgboost'
+
+...
+...
+```
+
+Invoke the endpoint by executing the following command:
+
+```bash
+python3 codes/glue/churn-xgboost/script/test_invoke.py
+...
+...
+0 Invocation ------------------
+>>input:  106,0,274.4,120,198.6,82,160.8,62,6.0,3,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0
+>>label:  0
+>>prediction:  0.37959378957748413
+1 Invocation ------------------
+>>input:  28,0,187.8,94,248.6,86,208.8,124,10.6,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0
+>>label:  0
+>>prediction:  0.03738965839147568
+2 Invocation ------------------
+>>input:  148,0,279.3,104,201.6,87,280.8,99,7.9,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0
+>>label:  1
+>>prediction:  0.9195730090141296
+3 Invocation ------------------
+>>input:  132,0,191.9,107,206.9,127,272.0,88,12.6,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0
+>>label:  0
+>>prediction:  0.025062650442123413
+4 Invocation ------------------
+>>input:  92,29,155.4,110,188.5,104,254.9,118,8.0,4,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1
+>>label:  0
+>>prediction:  0.028299745172262192
+```
 
 ## How to re-use or upgrade
 
