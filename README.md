@@ -231,7 +231,7 @@ AWS Glue ETL Job Result in AWS S3 Bucket
 Amazon SageMaker Training Job Result in AWS S3 Bucket
 ![sagemaker-training-output](docs/asset/sagemaker-training-output.png)
 
-### **Hot to invoke**
+### **How to invoke SageMaker-Endpoint**
 
 Finally, let's inovoke `SageMaker Endpoint` to make sure it works well. 
 
