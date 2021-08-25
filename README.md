@@ -328,13 +328,14 @@ A input S3 key will generate a unique title, it is used for `TrainingJobName`, `
     ...
     "TrainParameters": {
         "max_depth": "5",
+        "eval_metric": "error",
         "eta": "0.2",
         "gamma": "4",
         "min_child_weight": "6",
-        "subsample": "0.7",
-        "objective": "multi:softprob",
-        "num_class": "2",
-        "num_round": "50"
+        "subsample": "0.8",
+        "objective": "binary:logistic",
+        "silent": "0",
+        "num_round": "100"
     },
     ...
     ...
