@@ -105,10 +105,10 @@ Through this external configuration injection, multiple deployments(multiple acc
 
 ### **Install dependecies & Bootstrap**
 
-For more details, open `scripts/setup_initial.sh` file.
+For more details, open `script/setup_initial.sh` file.
 
 ```bash
-sh scripts/setup_initial.sh config/app-config-demo.json
+sh script/setup_initial.sh config/app-config-demo.json
 ```
 
 ### **Deploy stacks**
@@ -136,7 +136,7 @@ cdk deploy *ChurnXgboostPipelineStack --profile [optional: your profile name]
 or
 
 ```bash
-sh scripts/deploy_stacks.sh config/app-config-demo.json
+sh script/deploy_stacks.sh config/app-config-demo.json
 ```
 
 ***Caution***: This solution contains not-free tier AWS services. So be careful about the possible costs.
