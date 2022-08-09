@@ -16,86 +16,104 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import * as cdk from '@aws-cdk/core';
-import * as s3 from '@aws-cdk/aws-s3'
-import * as ssm from '@aws-cdk/aws-ssm'
+import * as cdk from 'aws-cdk-lib';
+import * as s3 from 'aws-cdk-lib/aws-s3'
 
 import { AppContext } from '../../app-context'
+import { AppConfig, StackConfig } from '../../app-config'
+import { CommonHelper, ICommonHelper } from '../../common/common-helper'
+import { CommonGuardian, ICommonGuardian } from '../../common/common-guardian'
+
+
+export function Override(target: any, propertyKey: string, descriptor: PropertyDescriptor){}
 
 export interface StackCommonProps extends cdk.StackProps {
     projectPrefix: string;
-    appConfig: any;
-    appConfigPath: any;
-    variable: any;
+    appConfig: AppConfig;
+    appConfigPath: string;
+    variables: any;
 }
 
-export class BaseStack extends cdk.Stack {
+export class BaseStack extends cdk.Stack implements ICommonHelper, ICommonGuardian {
+    protected stackConfig: StackConfig;
     protected projectPrefix: string;
     protected commonProps: StackCommonProps;
-    protected stackConfig: any;
+
+    private commonHelper: ICommonHelper;
+    private commonGuardian: ICommonGuardian;
 
     constructor(appContext: AppContext, stackConfig: any) {
-        super(appContext.cdkApp, stackConfig.Name, appContext.stackCommonProps);
+        let newProps = BaseStack.getStackCommonProps(appContext, stackConfig);
+        super(appContext.cdkApp, stackConfig.Name, newProps);
 
         this.stackConfig = stackConfig;
-        this.commonProps = appContext.stackCommonProps!;
-        this.projectPrefix = appContext.stackCommonProps!.projectPrefix;
-    }
+        this.commonProps = newProps;
+        this.projectPrefix = appContext.stackCommonProps.projectPrefix;
 
-    protected findEnumType<T>(enumType: T, target: string): T[keyof T] {
-        type keyType = keyof typeof enumType;
+        this.commonHelper = new CommonHelper({
+            construct: this,
+            env: this.commonProps.env!,
+            stackName: this.stackName,
+            projectPrefix: this.projectPrefix,
+            variables: this.commonProps.variables
+        });
 
-        const keyInString = Object.keys(enumType).find(key => 
-            // console.log(`${key} = ${enumType[key as keyof typeof enumType]}`);
-            // (<any>EnumType)['StringKeyofEnumType']
-            target == `${enumType[key as keyof typeof enumType]}` as string
-        );
-
-        const key = keyInString as keyType;
-        return enumType[key];
-    }
-
-    protected exportOutput(key: string, value: string) {
-        new cdk.CfnOutput(this, `Output-${key}`, {
-            exportName: `${this.projectPrefix}-${key}`,
-            value: value
+        this.commonGuardian = new CommonGuardian({
+            construct: this,
+            env: this.commonProps.env!,
+            stackName: this.stackName,
+            projectPrefix: this.projectPrefix,
+            variables: this.commonProps.variables
         });
     }
 
-    protected createS3BucketName(baseName: string): string {
-        const suffix: string = `${this.commonProps.env?.region}-${this.commonProps.env?.account?.substr(0, 5)}`
-        return `${this.projectPrefix}-${baseName}-${suffix}`.toLowerCase().replace('_', '-');
+    private static getStackCommonProps(appContext: AppContext, stackConfig: any): StackCommonProps{
+        let newProps = appContext.stackCommonProps;
+        if (stackConfig.UpdateRegionName) {
+            console.log(`[INFO] Region is updated: ${stackConfig.Name} ->> ${stackConfig.UpdateRegionName}`);
+            newProps = {
+                ...appContext.stackCommonProps,
+                env: {
+                    region: stackConfig.UpdateRegionName,
+                    account: appContext.appConfig.Project.Account
+                }
+            };
+        } else {
+            // console.log('not update region')
+        }
+
+        return newProps;
     }
 
-    protected createS3Bucket(baseName: string): s3.Bucket {
-        const suffix: string = `${this.commonProps.env?.region}-${this.commonProps.env?.account?.substr(0, 5)}`
-
-        const s3Bucket = new s3.Bucket(this, `${baseName}-bucket`, {
-            bucketName: `${this.projectPrefix}-${baseName}-${suffix}`.toLowerCase().replace('_', '-'),
-            versioned: false,
-            removalPolicy: cdk.RemovalPolicy.RETAIN // for prod, RETAIN is safe
-        });
-
-        return s3Bucket;
+    findEnumType<T>(enumType: T, target: string): T[keyof T] {
+        return this.commonHelper.findEnumType(enumType, target);
     }
 
-    protected putParameter(paramKey: string, paramValue: string): string {
-        const paramKeyWithPrefix = `${this.projectPrefix}-${paramKey}`;
-
-        new ssm.StringParameter(this, paramKey, {
-            parameterName: paramKeyWithPrefix,
-            stringValue: paramValue,
-        });
-
-        return paramKey;
+    exportOutput(key: string, value: string, prefixEnable=true, prefixCustomName?: string) {
+        this.commonHelper.exportOutput(key, value, prefixEnable, prefixCustomName);
     }
 
-    protected getParameter(paramKey: string): string {
-        const paramKeyWithPrefix = `${this.projectPrefix}-${paramKey}`;
-        
-        return ssm.StringParameter.valueForStringParameter(
-            this,
-            paramKeyWithPrefix
-        );
+    putParameter(paramKey: string, paramValue: string, prefixEnable=true, prefixCustomName?: string): string {
+        return this.commonHelper.putParameter(paramKey, paramValue, prefixEnable, prefixCustomName);
+    }
+
+    getParameter(paramKey: string, prefixEnable=true, prefixCustomName?: string): string {
+        return this.commonHelper.getParameter(paramKey, prefixEnable, prefixCustomName);
+    }
+
+    putVariable(variableKey: string, variableValue: string) {
+        this.commonHelper.putVariable(variableKey, variableValue);
+    }
+
+    getVariable(variableKey: string): string {
+        return this.commonHelper.getVariable(variableKey);
+    }
+
+    createS3BucketName(baseName: string, suffix?: boolean): string {
+        return this.commonGuardian.createS3BucketName(baseName, suffix);
+    }
+
+    createS3Bucket(baseName: string, suffix?: boolean, encryption?: s3.BucketEncryption, versioned?: boolean): s3.Bucket {
+        return this.commonGuardian.createS3Bucket(baseName, suffix, encryption, versioned);
     }
 }

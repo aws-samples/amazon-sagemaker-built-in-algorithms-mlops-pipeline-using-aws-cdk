@@ -1,17 +1,17 @@
-import * as cdk from '@aws-cdk/core';
-import * as iam from '@aws-cdk/aws-iam';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as lambda_event from '@aws-cdk/aws-lambda-event-sources';
-import * as glue from '@aws-cdk/aws-glue';
-import * as sfn from '@aws-cdk/aws-stepfunctions';
-import * as tasks from '@aws-cdk/aws-stepfunctions-tasks';
+import * as cdk from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as lambda_event from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as glue from 'aws-cdk-lib/aws-glue';
+import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
+import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
 
 import * as base from '../../../lib/template/stack/base/base-stack';
 import { AppContext } from '../../../lib/template/app-context';
 
-import { GlueJobConstruct } from '../../../lib/template/pattern/glue-job-construct';
+import { GlueJobConstruct } from '../../../lib/template/construct/pattern/glue-job-construct';
 
 interface MLOpsPipelineConfig {
     EndpointName: string;
@@ -67,7 +67,7 @@ export class MLOpsPipelineStack extends base.BaseStack {
 
         const baseName = pipelineConfig.EndpointName;
 
-        const bucket = this.createS3Bucket(baseName);
+        const bucket = this.createS3Bucket('asset');
 
         const stateMachine = this.createStateMachine({
                 statemachineName: baseName,
@@ -331,8 +331,12 @@ export class MLOpsPipelineStack extends base.BaseStack {
         const directory = filePath.replace(`/${fileName}`, '');
 
         return new GlueJobConstruct(this, baseName, {
-            baseName: baseName,
+            stackConfig: this.stackConfig,
+            stackName: this.stackName,
+            env: this.commonProps.env!,
             projectPrefix: this.projectPrefix,
+
+            baseName: baseName,
             bucket: bucket,
             timeoutInMin: timeoutInMin,
             etlScriptFileName: fileName,

@@ -18,58 +18,84 @@
 
 const fs = require('fs');
 const env = require('env-var');
-import * as cdk from '@aws-cdk/core';
+import * as cdk from 'aws-cdk-lib';
 
+import { AppConfig } from './app-config';
 import { StackCommonProps } from './stack/base/base-stack';
 
+
+export class AppContextError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "AppConfigFileFailError";
+    }
+}
+
+export enum ProjectPrefixType {
+    NameStage,
+    NameHyphenStage,
+    Name
+}
+
 export interface AppContextProps {
-    appConfigEnvName: string;
-    projectPrefix?: string;
+    appConfigFileKey: string;
     contextArgs?: string[];
+    projectPrefixType?: ProjectPrefixType;
 }
 
 export class AppContext {
     public readonly cdkApp: cdk.App;
-    public readonly appConfig: any | undefined;
-    public readonly stackCommonProps: StackCommonProps | undefined;
+    public readonly appConfig: AppConfig;
+    public readonly stackCommonProps: StackCommonProps;
 
-    private projectPrefix: string|undefined;
-    private infraConfigPath: string|undefined;
+    private readonly appContextProps: AppContextProps;
 
     constructor(props: AppContextProps) {
         this.cdkApp = new cdk.App();
+        this.appContextProps = props;
 
-        this.projectPrefix = props.projectPrefix;
+        try {
+            const appConfigFile = this.findAppConfigFile(props.appConfigFileKey);
 
-        this.appConfig = this.loadConfig(this.cdkApp, props.appConfigEnvName, props.contextArgs);
+            this.appConfig = this.loadAppConfigFile(appConfigFile, props.contextArgs);
 
-        if (this.appConfig != undefined) {
-            this.stackCommonProps = this.createStackProps();
+            if (this.appConfig != undefined) {
+                this.stackCommonProps = this.createStackCommonProps(appConfigFile);
+            }
+
+        } catch (e) {
+            console.error(`==> CDK App-Config File is empty, 
+            set up your environment variable(Usage: export ${props.appConfigFileKey}=config/app-config-xxx.json) 
+            or append inline-argurment(Usage: cdk list --context ${props.appConfigFileKey}=config/app-config-xxx.json)`, e);
+            throw new AppContextError('Fail to find App-Config json file');
         }
     }
 
-    private createStackProps(): StackCommonProps {
+    public ready(): boolean {
+        return this.stackCommonProps ? true : false;
+    }
+
+    private createStackCommonProps(appConfigFile: string): StackCommonProps {
         const stackProps: StackCommonProps = {
-            projectPrefix: this.projectPrefix!,
+            projectPrefix: this.getProjectPrefix(this.appConfig.Project.Name, this.appConfig.Project.Stage),
             appConfig: this.appConfig,
-            appConfigPath: this.infraConfigPath!,
+            appConfigPath: appConfigFile,
             env: {
                 account: this.appConfig.Project.Account,
                 region: this.appConfig.Project.Region
             },
-            variable: {}
+            variables: {}
         }
 
         return stackProps;
     }
 
-    // must contain infra/config/xxxx.json
-    private loadConfig(cdkApp: cdk.App, key: string, contextArgs?: string[]): any {
-        var fromType = 'Input-Parameter';
-        var configFilePath = cdkApp.node.tryGetContext(key); //'APP_CONFIG'
+    private findAppConfigFile(appConfigKey: string): string {
+        let fromType = 'InLine-Argument';
+        let configFilePath = this.cdkApp.node.tryGetContext(appConfigKey);
 
         if (configFilePath == undefined) {
-            configFilePath = env.get(key).asString();
+            configFilePath = env.get(appConfigKey).asString();
 
             if (configFilePath != undefined && configFilePath.length > 0) {
                 fromType = 'Environment-Variable';
@@ -79,62 +105,68 @@ export class AppContext {
         }
 
         if (configFilePath == undefined) {
-            console.error(`==> CDK App-Config File is empty, 
-        please check your environment variable(Usage: export ${key}=config/app-config-xxx.json) 
-                        or input parameter(--context=${key}=config/app-config-xxx.json)`);
-            return false;
+            throw new Error('Fail to find App-Config json file')
         } else {
             console.info(`==> CDK App-Config File is ${configFilePath}, which is from ${fromType}.`);
-            return this.loadConfigFromFile(configFilePath, cdkApp, contextArgs);
         }
+
+        return configFilePath;
     }
 
-    private loadConfigFromFile(filePath: string, app?: cdk.App, contextArgs?: string[]): any {
-        this.infraConfigPath = filePath;
-        let config: any = JSON.parse(fs.readFileSync(filePath).toString());
-        
+    private getProjectPrefix(projectName: string, projectStage: string): string {
+        let prefix = `${projectName}${projectStage}`;
+
+        if (this.appContextProps.projectPrefixType === ProjectPrefixType.NameHyphenStage) {
+            prefix = `${projectName}-${projectStage}`;
+        } else if (this.appContextProps.projectPrefixType === ProjectPrefixType.Name) {
+            prefix = projectName;
+        }
+
+        return prefix;
+    }
+
+    private loadAppConfigFile(filePath: string, contextArgs?: string[]): any {
+        let appConfig = JSON.parse(fs.readFileSync(filePath).toString());
+        let projectPrefix = this.getProjectPrefix(appConfig.Project.Name, appConfig.Project.Stage);
+
         if (contextArgs != undefined) {
-            this.updateContextArgs(config, app!, contextArgs);
+            this.updateContextArgs(appConfig, contextArgs);
         }
-        
-        this.addPrefixIntoStackName(config);
 
-        return config;
+        this.addPrefixIntoStackName(appConfig, projectPrefix);
+
+        return appConfig;
     }
-    
-    private updateContextArgs(config: any, app: cdk.App, contextArgs: string[]) {
-        for (var key of contextArgs) {
+
+    private updateContextArgs(appConfig: any, contextArgs: string[]) {
+        for (let key of contextArgs) {
             const jsonKeys = key.split('.');
-            let oldValue = '';
-            const newValue: string = app?.node.tryGetContext(key);
-
-            if (jsonKeys.length == 1) {
-                oldValue = config[jsonKeys[0]];
-                config[jsonKeys[0]] = newValue;
-            } else if (jsonKeys.length == 2) {
-                oldValue = config[jsonKeys[0]][jsonKeys[1]]
-                config[jsonKeys[0]][jsonKeys[1]] = newValue;
-            } else if (jsonKeys.length == 3) {
-                oldValue = config[jsonKeys[0]][jsonKeys[1]][jsonKeys[2]];
-                config[jsonKeys[0]][jsonKeys[1]][jsonKeys[2]] = newValue;
-            } else if (jsonKeys.length == 4) {
-                oldValue = config[jsonKeys[0]][jsonKeys[1]][jsonKeys[2]][jsonKeys[3]];
-                config[jsonKeys[0]][jsonKeys[1]][jsonKeys[2]][jsonKeys[3]] = newValue;
-            } else if (jsonKeys.length == 5) {
-                oldValue = config[jsonKeys[0]][jsonKeys[1]][jsonKeys[2]][jsonKeys[3]][jsonKeys[4]];
-                config[jsonKeys[0]][jsonKeys[1]][jsonKeys[2]][jsonKeys[3]][jsonKeys[4]] = newValue;
+            let oldValue = undefined;
+            const newValue: string = this.cdkApp.node.tryGetContext(key);
+    
+            if (newValue != undefined && jsonKeys.length > 0) {
+                try {
+                    oldValue = jsonKeys.reduce((reducer: any, pointer: string) => reducer.hasOwnProperty(pointer) ? reducer[pointer] : undefined, appConfig);
+                } catch(e) {
+                    console.error(`[ERROR] updateContextArgs: This key[${key}] is an undefined value in Json-Config file.\n`, e);
+                    throw e;
+                }
+    
+                jsonKeys.reduce((reducer: any, pointer: string, count: number) => {
+                    if (count == jsonKeys.length - 1) reducer[pointer] = newValue;
+                    return reducer[pointer];
+                }, appConfig);
+    
+                console.info(`[INFO] updateContextArgs: Updated ${key} = ${oldValue}-->${newValue}`);
             }
-
-            console.error(`updateContextArgs: ${key} = ${oldValue}-->${newValue}`);
         }
     }
 
-    private addPrefixIntoStackName(config: any) {
-        const projectPrefix = this.projectPrefix == undefined ? `${config.Project.Name}${config.Project.Stage}` : this.projectPrefix;
-        this.projectPrefix = projectPrefix;
-
-        for (const key in config.Stack) {
-            config.Stack[key].Name = `${projectPrefix}-${config.Stack[key].Name}`;
+    private addPrefixIntoStackName(appConfig: any, projectPrefix: string) {
+        for (const key in appConfig.Stack) {
+            const stackOriginalName = appConfig.Stack[key].Name;
+            appConfig.Stack[key].ShortStackName = stackOriginalName;
+            appConfig.Stack[key].Name = `${projectPrefix}-${stackOriginalName}`;
         }
     }
 }
