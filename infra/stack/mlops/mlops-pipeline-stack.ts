@@ -314,7 +314,8 @@ export class MLOpsPipelineStack extends base.BaseStack {
                 "sagemaker:CreateTrainingJob",
                 "sagemaker:UpdateEndpoint",
                 "sagemaker:CreateEndpointConfig",
-                "sagemaker:DeleteEndpoint"
+                "sagemaker:DeleteEndpoint",
+                "sagemaker:AddTags"
             ],
             resources: [
                 '*'
