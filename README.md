@@ -25,7 +25,7 @@ This solution refers to [amazon-sagemaker-examples: automate_model_retraining_wo
 - [Amazon SageMaker Built-in Algorithms Docker Path](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-algo-docker-registry-paths.html)
 - [Amazon SageMaker Built-in Algorithms Data Format](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-algo-common-data-formats.html)
 
-Note that using SageMaker built-in algorithms is very convenient because we only need to focus on the data.
+Note that using SageMaker built-in algorithms is very convenient because we only need to focus on a data, not model.
 
 ## CDK-Project Build & Deploy
 
@@ -47,12 +47,12 @@ Because this solusion is implemented in CDK, we can deploy these cloud resources
 
 First of all, AWS Account and IAM User is required. And then the following modules must be installed.
 
-- AWS CLI: aws configure --profile [profile name]
+- AWS CLI: aws --version
 - Node.js: node --version
 - AWS CDK: cdk --version
 - [jq](https://stedolan.github.io/jq/): jq --version
 
-Please refer to the kind guide in [CDK Workshop](https://cdkworkshop.com/15-prerequisites.html).
+Please refer to a kind guide in [CDK Workshop](https://cdkworkshop.com/15-prerequisites.html).
 
 ### **Configure AWS Credential**
 
@@ -75,37 +75,39 @@ aws sts get-caller-identity --profile [your-profile]
 
 ### **Check CDK project's entry-point**
 
-In this CDK project, a entry-point file is **infra/app-main.ts** which is described in `cdk.json`.
+ In this CDK project, a entry-point file is **infra/app-main.ts** which is described in `cdk.json`.
 
-### **Set up deploy config**
+### **Set up deploy configuration**
 
-The `config/app-config-demo.json` file describes how to configure deploy condition & stack condition. First of all, change project configurations(Account, Profile are essential) in ```config/app-config-demo.json```.
+ This project is based on [aws-cdk-project-template-for-devops](https://github.com/aws-samples/aws-cdk-project-template-for-devops), which adopts configuration driven development(CDD). So let's set up configuration file(`config/app-config-demo.json`), which describes deployment target information(account/region) and how to configure each stack properties. 
+
+ First of all, change deployment target information(account/region) in ```config/app-config-demo.json``` according to your AWS accout environment.
 
 ```json
 {
     "Project": {
-        "Name": "MLOpsPipeline",   <----- Optional: your project name, all stacks wil be prefixed with [Project.Name+Project.Stage]
-        "Stage": "Demo",           <----- Optional: your project stage, all stacks wil be prefixed with [Project.Name+Project.Stage]
-        "Account": "75157*******", <----- Essential: update according to your AWS Account
-        "Region": "us-east-2",     <----- Essential: update according to your target resion
-        "Profile": "cdk-demo"      <----- Essential: AWS Profile, keep empty string if no profile configured
+        "Name": "MLOpsPipeline",   <----- your project name, all stacks wil be prefixed with [Project.Name+Project.Stage]
+        "Stage": "Demo",           <----- your project stage, all stacks wil be prefixed with [Project.Name+Project.Stage]
+        "Account": "75157*******", <----- update according to your AWS Account
+        "Region": "us-east-2",     <----- update according to your target resion
+        "Profile": "cdk-demo"      <----- AWS Profile, keep empty string if no profile configured
     },
     ...
     ...
 }
 ```
 
-And then set the path of this json configuration file through an environment variable.
+And then set the path of this json configuration file through setting up environment variable.
 
 ```bash
 export APP_CONFIG=config/app-config-demo.json
 ```
 
-Through this external configuration injection, multiple deployments(multiple account, multiple region, multiple stage) are possible without code modification.
+Through this external configuration injection, multiple deployments(multiple account, multiple region, multiple stage) are possible without code modification. For example, we can maintain a variety of configuration files such as `app-config-dev.json`, `app-config-test.json` and `app-config-prod.json` at the same time.
 
 ### **Install dependecies & Bootstrap**
 
-For more details, open `script/setup_initial.sh` file.
+Execute the following command, which will check versions and install dependencies intead of us. For more details, open `script/setup_initial.sh` file.
 
 ```bash
 sh script/setup_initial.sh config/app-config-demo.json
@@ -157,13 +159,13 @@ Many resources such as Lambda/SageMakerTrainingJob/GlueETLJob have been deployed
 
 ### **Prepare a input data**
 
-Download sample data by running the following command:
+Download sample data by running the following command, where `sed` command is used to remove `"` character in each line.
 
 ```bash
 sh codes/glue/churn-xgboost/script/download_data.sh
 ```
 
-A sample data will be downloaded in `codes/glue/churn-xgboost/data/input.csv`, and double quotes in this file will be removded to format `csv`.
+A sample data will be downloaded in `codes/glue/churn-xgboost/data/input.csv`.
 
 ### **Trigger the StateMachine in Step Functions**
 
@@ -233,7 +235,7 @@ Amazon SageMaker Training Job Result in AWS S3 Bucket
 
 ### **How to invoke SageMaker-Endpoint**
 
-Finally, let's inovoke `SageMaker Endpoint` to make sure it works well. 
+Finally, let's invoke `SageMaker Endpoint` to make sure it works well. 
 
 Before invocation, open `codes/glue/churn-xgboost/script/test_invoke.py` file, and update `profile name` and `endpoint name` according to your configuration.
 
