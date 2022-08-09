@@ -3,7 +3,7 @@
 # Configuration File Path
 export APP_CONFIG=$1
 
-PROFILE_NAME=$(cat $APP_CONFIG | jq -r '.Project.Profile') #ex> cdk-demo
+PROFILE_NAME=$(cat $APP_CONFIG | jq -r '.Project.Profile') #ex> cdk-v2
 
 echo ==--------ConfigInfo---------==
 echo $APP_CONFIG

@@ -86,7 +86,7 @@ aws sts get-caller-identity --profile [your-profile]
 ```json
 {
     "Project": {
-        "Name": "MLOpsPipeline",   <----- your project name, all stacks wil be prefixed with [Project.Name+Project.Stage]
+        "Name": "MLOps",   <----- your project name, all stacks wil be prefixed with [Project.Name+Project.Stage]
         "Stage": "Demo",           <----- your project stage, all stacks wil be prefixed with [Project.Name+Project.Stage]
         "Account": "75157*******", <----- update according to your AWS Account
         "Region": "us-east-2",     <----- update according to your target resion
@@ -123,7 +123,7 @@ cdk list
 ...
 ==> CDK App-Config File is config/app-config-demo.json, which is from Environment-Variable.
 
-MLOpsPipelineDemo-ChurnXgboostPipelineStack
+MLOpsDemo-ChurnXgboostPipelineStack
 
 ...
 ...
@@ -175,10 +175,10 @@ Just execute the following command:
 sh codes/glue/churn-xgboost/script/upload_input.sh config/app-config-demo.json data/request-01.csv
 ...
 ...
-upload: codes/glue/churn-xgboost/data/input.csv to s3://mlopspipelinedemo-churn-xgboost-[region]-[account 5 digits]/input/data/request-01.csv
+upload: codes/glue/churn-xgboost/data/input.csv to s3://mlopsdemo-churnxgboostpipelinestack-asset-[region]-[account 5 digits]/input/data/request-01.csv
 ```
 
-This command will upload `input.csv` file into S3 bucket such as `mlopspipelinedemo-churn-xgboost-[region]-[account 5 digits]` with `input/data/request-01.csv` key.
+This command will upload `input.csv` file into S3 bucket such as `mlopsdemo-churnxgboostpipelinestack-asset-[region]-[account 5 digits]` with `input/data/request-01.csv` key.
 
 ![s3-input-data](docs/asset/s3-input-data.png)
 
@@ -211,7 +211,7 @@ sh script/deploy_stacks.sh config/app-config-demo.json
 sh codes/glue/churn-xgboost/script/upload_input.sh config/app-config-demo.json data/request-02.csv
 ...
 ...
-upload: codes/glue/churn-xgboost/data/input.csv to s3://mlopspipelinedemo-churn-xgboost-[region]-[account 5 digits]/input/data/request-02.csv
+upload: codes/glue/churn-xgboost/data/input.csv to s3://mlopsdemo-churnxgboostpipelinestack-asset-[region]-[account 5 digits]/input/data/request-02.csv
 ```
 
 Amazon SageMaker Endpoint
@@ -244,7 +244,7 @@ Before invocation, open `codes/glue/churn-xgboost/script/test_invoke.py` file, a
 ...
 
 os.environ['AWS_PROFILE'] = 'cdk-demo'
-_endpoint_name = 'MLOpsPipelineDemo-churn-xgboost'
+_endpoint_name = 'MLOpsDemo-churn-xgboost'
 
 ...
 ...
@@ -282,7 +282,7 @@ python3 codes/glue/churn-xgboost/script/test_invoke.py
 
 ### **How to re-trigger the StateMachine in Step Functions**
 
-Because a S3-event trigger is registered in `Lambda Function`, it is restarted when you upload a file with a different name(s3 key) under `input` in `mlopspipelinedemo-churn-xgboost-region-account`.
+Because a S3-event trigger is registered in `Lambda Function`, it is restarted when you upload a file with a different name(s3 key) under `input` in `mlopsdemo-churnxgboostpipelinestack-asset-region-account`.
 
 ![lambda-s3-event](docs/asset/lambda-s3-event.png)
 

@@ -1,10 +1,10 @@
 {
     "Project": {
-        "Name": "MLOpsPipeline",
+        "Name": "MLOps",
         "Stage": "Demo",
         "Account": "75157*******",
-        "Region": "us-east-2",
-        "Profile": "cdk-demo"
+        "Region": "eu-central-1",
+        "Profile": "cdk-v2"
     },
 
     "Stack": {
@@ -16,7 +16,7 @@
             "GlueJobFilePath": "codes/glue/churn-xgboost/src/glue_etl.py",
             "GlueJobTimeoutInMin": 30,
 
-            "TrainContainerImage": "825641698319.dkr.ecr.us-east-2.amazonaws.com/xgboost:latest",
+            "TrainContainerImage": "813361260812.dkr.ecr.eu-central-1.amazonaws.com/xgboost:latest",
             "TrainParameters": {
                 "max_depth": "5",
                 "eval_metric": "error",
