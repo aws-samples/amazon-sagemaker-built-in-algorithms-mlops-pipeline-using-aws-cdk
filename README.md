@@ -90,7 +90,7 @@ aws sts get-caller-identity --profile [your-profile]
         "Stage": "Demo",           <----- your project stage, all stacks wil be prefixed with [Project.Name+Project.Stage]
         "Account": "75157*******", <----- update according to your AWS Account
         "Region": "us-east-2",     <----- update according to your target resion
-        "Profile": "cdk-demo"      <----- AWS Profile, keep empty string if no profile configured
+        "Profile": "cdk-v2"      <----- AWS Profile, keep empty string if no profile configured
     },
     ...
     ...
@@ -243,7 +243,7 @@ Before invocation, open `codes/glue/churn-xgboost/script/test_invoke.py` file, a
 ...
 ...
 
-os.environ['AWS_PROFILE'] = 'cdk-demo'
+os.environ['AWS_PROFILE'] = 'cdk-v2'
 _endpoint_name = 'MLOpsDemo-churn-xgboost'
 
 ...
