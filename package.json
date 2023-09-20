@@ -1,5 +1,5 @@
 {
-  "name": "mlops-pipeline",
+  "name": "@aws-samples/mlops-pipeline",
   "version": "0.1.0",
   "bin": {
     "mlops-pipeline": "infra/app-main.js"
